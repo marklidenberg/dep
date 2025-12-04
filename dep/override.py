@@ -1,6 +1,5 @@
 from typing import Callable, Dict
-from .dep import _overrides, _cache
-
+from dep import _overrides, _cache
 
 def override(mapping: Dict[Callable, Callable]) -> None:
     """
@@ -9,6 +8,11 @@ def override(mapping: Dict[Callable, Callable]) -> None:
     Args:
         mapping: Dictionary mapping original functions to their overrides
     """
+
+    # - Update override mappings
+
     _overrides.update(mapping)
-    # Clear cache when overrides are set
+
+    # - Clear cache when overrides are set
+
     _cache.clear()
