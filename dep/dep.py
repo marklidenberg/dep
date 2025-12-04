@@ -3,6 +3,9 @@ from typing import Any, Callable, TypeVar
 import asyncio
 import inspect
 
+from dep.sync_context_manager import _SyncContextManager
+from dep.async_context_manager import _AsyncContextManager
+
 T = TypeVar('T')
 
 # - Module-level state
