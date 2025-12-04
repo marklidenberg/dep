@@ -103,7 +103,7 @@ def dep(cached: bool = True):
 def test():
     # - Test sync dependency with caching
 
-    @dep(cached=True)
+    @dep()
     def get_value(x: str):
         yield x
 
