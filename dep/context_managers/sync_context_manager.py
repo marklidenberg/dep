@@ -9,7 +9,6 @@ class SyncContextManager:
         return self.value
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-
         # - Clean up generator if present
 
         if self.generator:
@@ -22,7 +21,6 @@ class SyncContextManager:
 
 
 def test():
-
     # - Test basic context manager without generator
 
     cm = SyncContextManager("test_value")

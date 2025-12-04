@@ -3,10 +3,10 @@ from typing import Any, Callable, TypeVar
 import asyncio
 import inspect
 
-from dep.sync_context_manager import SyncContextManager
-from dep.async_context_manager import AsyncContextManager
+from dep.context_managers.sync_context_manager import SyncContextManager
+from dep.context_managers.async_context_manager import AsyncContextManager
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 # - Module-level state
 
@@ -21,11 +21,10 @@ def dep(cached: bool = True):
     Args:
         cached: If True, the result will be cached and reused
     """
-    def decorator(func: Callable[..., T]) -> Callable[..., T]:
 
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
-
             # - Resolve target function
 
             target_func = _overrides.get(func, func)
@@ -58,7 +57,6 @@ def dep(cached: bool = True):
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-
             # - Resolve target function
 
             target_func = _overrides.get(func, func)
@@ -100,7 +98,6 @@ def dep(cached: bool = True):
 
 
 def test():
-
     # - Test sync dependency with caching
 
     @dep(cached=True)
@@ -130,6 +127,7 @@ def test():
             assert value == "async_test"
 
     import asyncio
+
     asyncio.run(test_async())
 
 

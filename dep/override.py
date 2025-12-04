@@ -1,5 +1,5 @@
 from typing import Callable, Dict
-from dep import _overrides, _cache
+from dep._dep import _overrides, _cache
 
 def override(mapping: Dict[Callable, Callable]) -> None:
     """
@@ -22,7 +22,7 @@ def test():
 
     # - Test override functionality
 
-    from dep import dep
+    from dep._dep import dep
 
     @dep(cached=True)
     def get_foo(bar: str):
