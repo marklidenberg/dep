@@ -1,17 +1,20 @@
+from __future__ import annotations
+
 from typing import Callable
 from dep._dep import _overrides, _cache
 
-def override(**kwargs: Callable) -> None:
+
+def override(mapping: dict[Callable, Callable]) -> None:
     """
     Override dependency functions with new implementations.
 
     Args:
-        **kwargs: Keyword arguments mapping original function names to their overrides
+        mapping: Dictionary mapping original functions to their override functions
     """
 
     # - Update override mappings
 
-    _overrides.update(kwargs)
+    _overrides.update(mapping)
 
     # - Clear cache when overrides are set
 
@@ -19,7 +22,6 @@ def override(**kwargs: Callable) -> None:
 
 
 def test():
-
     # - Test override functionality
 
     from dep._dep import dep
@@ -39,7 +41,7 @@ def test():
 
     # - Apply override
 
-    override(get_foo=new_get_foo)
+    override({get_foo: new_get_foo})
 
     # - Test overridden function
 

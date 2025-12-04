@@ -1,17 +1,31 @@
+from __future__ import annotations
+
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Generator, AsyncGenerator, overload
+from contextlib import contextmanager, asynccontextmanager
 import asyncio
 import inspect
-
-from dep.context_managers.sync_context_manager import SyncContextManager
-from dep.context_managers.async_context_manager import AsyncContextManager
 
 T = TypeVar("T")
 
 # - Module-level state
 
-_cache: dict[Callable, Any] = {}
+_cache: dict[tuple, Any] = {}
 _overrides: dict[Callable, Callable] = {}
+
+
+@overload
+def dep(
+    cached: bool = False,
+) -> Callable[[Callable[..., Generator[T, None, None]]], Callable[..., "contextmanager[T]"]]: ...
+
+
+@overload
+def dep(
+    cached: bool = False,
+) -> Callable[
+    [Callable[..., AsyncGenerator[T, None]]], Callable[..., "asynccontextmanager[T]"]
+]: ...
 
 
 def dep(cached: bool = False):
@@ -19,12 +33,13 @@ def dep(cached: bool = False):
     Decorator for dependency injection with optional caching.
 
     Args:
-        cached: If True, the result will be cached and reused
+        cached: If True, the result will be cached and reused for the duration of the context
     """
 
-    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+    def decorator(func: Callable[..., Generator[T, None, None]]) -> Callable[..., contextmanager[T]]:
         @wraps(func)
-        def sync_wrapper(*args, **kwargs):
+        @contextmanager
+        def sync_wrapper(*args, **kwargs) -> Generator[T, None, None]:
             # - Resolve target function
 
             target_func = _overrides.get(func, func)
@@ -36,7 +51,8 @@ def dep(cached: bool = False):
             # - Check cache if enabled
 
             if cached and cache_key in _cache:
-                return SyncContextManager(_cache[cache_key])
+                yield _cache[cache_key]
+                return
 
             # - Execute function and get result
 
@@ -46,49 +62,72 @@ def dep(cached: bool = False):
 
             try:
                 result = next(result_gen)
-
-                if cached:
-                    _cache[cache_key] = result
-
-                return SyncContextManager(result, result_gen)
-
             except StopIteration:
                 raise RuntimeError(f"{func.__name__} did not yield a value")
 
-        @wraps(func)
-        def async_wrapper(*args, **kwargs):
-            async def _initializer():
-                # - Resolve target function
+            if cached:
+                _cache[cache_key] = result
 
-                target_func = _overrides.get(func, func)
-
-                # - Build cache key
-
-                cache_key = (target_func, args, tuple(sorted(kwargs.items())))
-
-                # - Check cache if enabled
-
-                if cached and cache_key in _cache:
-                    return _cache[cache_key], None
-
-                # - Execute function and get result
-
-                result_gen = target_func(*args, **kwargs)
-
-                # - Extract yielded value
+            try:
+                yield result
+            finally:
+                # - Cleanup: run generator to completion
 
                 try:
-                    result = await result_gen.__anext__()
+                    next(result_gen)
+                except StopIteration:
+                    pass
 
-                    if cached:
-                        _cache[cache_key] = result
+                # - Remove from cache after cleanup
 
-                    return result, result_gen
+                if cached and cache_key in _cache:
+                    del _cache[cache_key]
 
+        @wraps(func)
+        @asynccontextmanager
+        async def async_wrapper(*args, **kwargs) -> AsyncGenerator[T, None]:
+            # - Resolve target function
+
+            target_func = _overrides.get(func, func)
+
+            # - Build cache key
+
+            cache_key = (target_func, args, tuple(sorted(kwargs.items())))
+
+            # - Check cache if enabled
+
+            if cached and cache_key in _cache:
+                yield _cache[cache_key]
+                return
+
+            # - Execute function and get result
+
+            result_gen = target_func(*args, **kwargs)
+
+            # - Extract yielded value
+
+            try:
+                result = await result_gen.__anext__()
+            except StopAsyncIteration:
+                raise RuntimeError(f"{func.__name__} did not yield a value")
+
+            if cached:
+                _cache[cache_key] = result
+
+            try:
+                yield result
+            finally:
+                # - Cleanup: run generator to completion
+
+                try:
+                    await result_gen.__anext__()
                 except StopAsyncIteration:
-                    raise RuntimeError(f"{func.__name__} did not yield a value")
+                    pass
 
-            return AsyncContextManager(initializer=_initializer)
+                # - Remove from cache after cleanup
+
+                if cached and cache_key in _cache:
+                    del _cache[cache_key]
 
         # - Determine wrapper type based on function type
 
