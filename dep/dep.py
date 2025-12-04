@@ -3,8 +3,8 @@ from typing import Any, Callable, TypeVar
 import asyncio
 import inspect
 
-from dep.sync_context_manager import _SyncContextManager
-from dep.async_context_manager import _AsyncContextManager
+from dep.sync_context_manager import SyncContextManager
+from dep.async_context_manager import AsyncContextManager
 
 T = TypeVar('T')
 
@@ -37,7 +37,7 @@ def dep(cached: bool = True):
             # - Check cache if enabled
 
             if cached and cache_key in _cache:
-                return _SyncContextManager(_cache[cache_key])
+                return SyncContextManager(_cache[cache_key])
 
             # - Execute function and get result
 
@@ -51,7 +51,7 @@ def dep(cached: bool = True):
                 if cached:
                     _cache[cache_key] = result
 
-                return _SyncContextManager(result, result_gen)
+                return SyncContextManager(result, result_gen)
 
             except StopIteration:
                 raise RuntimeError(f"{func.__name__} did not yield a value")
@@ -70,7 +70,7 @@ def dep(cached: bool = True):
             # - Check cache if enabled
 
             if cached and cache_key in _cache:
-                return _AsyncContextManager(_cache[cache_key])
+                return AsyncContextManager(_cache[cache_key])
 
             # - Execute function and get result
 
@@ -84,7 +84,7 @@ def dep(cached: bool = True):
                 if cached:
                     _cache[cache_key] = result
 
-                return _AsyncContextManager(result, result_gen)
+                return AsyncContextManager(result, result_gen)
 
             except StopAsyncIteration:
                 raise RuntimeError(f"{func.__name__} did not yield a value")
@@ -99,47 +99,39 @@ def dep(cached: bool = True):
     return decorator
 
 
-class _SyncContextManager:
-    """Context manager for sync dependencies"""
+def test():
 
-    def __init__(self, value, generator=None):
-        self.value = value
-        self.generator = generator
+    # - Test sync dependency with caching
 
-    def __enter__(self):
-        return self.value
+    @dep(cached=True)
+    def get_value(x: str):
+        yield x
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    with get_value("test") as value:
+        assert value == "test"
 
-        # - Clean up generator if present
+    # - Test sync dependency without caching
 
-        if self.generator:
-            try:
-                next(self.generator)
-            except StopIteration:
-                pass
+    @dep(cached=False)
+    def get_value_no_cache(x: str):
+        yield x * 2
 
-        return False
+    with get_value_no_cache("test") as value:
+        assert value == "testtest"
+
+    # - Test async dependency with caching
+
+    async def test_async():
+        @dep(cached=True)
+        async def get_async_value(x: str):
+            yield x
+
+        async with get_async_value("async_test") as value:
+            assert value == "async_test"
+
+    import asyncio
+    asyncio.run(test_async())
 
 
-class _AsyncContextManager:
-    """Context manager for async dependencies"""
-
-    def __init__(self, value, generator=None):
-        self.value = value
-        self.generator = generator
-
-    async def __aenter__(self):
-        return self.value
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-
-        # - Clean up generator if present
-
-        if self.generator:
-            try:
-                await self.generator.__anext__()
-            except StopAsyncIteration:
-                pass
-
-        return False
+if __name__ == "__main__":
+    test()

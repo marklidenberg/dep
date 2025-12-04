@@ -1,4 +1,4 @@
-class _SyncContextManager:
+class SyncContextManager:
     """Context manager for sync dependencies"""
 
     def __init__(self, value, generator=None):
@@ -25,7 +25,7 @@ def test():
 
     # - Test basic context manager without generator
 
-    cm = _SyncContextManager("test_value")
+    cm = SyncContextManager("test_value")
 
     with cm as value:
         assert value == "test_value"
@@ -38,7 +38,11 @@ def test():
     gen = test_generator()
     result = next(gen)
 
-    cm_with_gen = _SyncContextManager(result, gen)
+    cm_with_gen = SyncContextManager(result, gen)
 
     with cm_with_gen as value:
         assert value == "yielded_value"
+
+
+if __name__ == "__main__":
+    test()

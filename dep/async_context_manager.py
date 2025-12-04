@@ -1,4 +1,7 @@
-class _AsyncContextManager:
+import asyncio
+
+
+class AsyncContextManager:
     """Context manager for async dependencies"""
 
     def __init__(self, value, generator=None):
@@ -9,7 +12,6 @@ class _AsyncContextManager:
         return self.value
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-
         # - Clean up generator if present
 
         if self.generator:
@@ -22,10 +24,9 @@ class _AsyncContextManager:
 
 
 async def test():
-
     # - Test basic context manager without generator
 
-    cm = _AsyncContextManager("test_value")
+    cm = AsyncContextManager("test_value")
 
     async with cm as value:
         assert value == "test_value"
@@ -38,7 +39,11 @@ async def test():
     gen = test_generator()
     result = await gen.__anext__()
 
-    cm_with_gen = _AsyncContextManager(result, gen)
+    cm_with_gen = AsyncContextManager(result, gen)
 
     async with cm_with_gen as value:
         assert value == "yielded_value"
+
+
+if __name__ == "__main__":
+    asyncio.run(test())
