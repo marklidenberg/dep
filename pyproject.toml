@@ -1,7 +1,7 @@
 [project]
 name = "dep"
 version = "0.0.1"
-description = "File primitives for Python"
+description = "Remarkably simple Python dependency injection"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [

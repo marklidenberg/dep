@@ -1,6 +1,6 @@
 # dep
 
-Embarassingly simple Python dependency injection.
+Remarkably simple Python dependency injection
 
 ## Usage
 
