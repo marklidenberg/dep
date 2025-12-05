@@ -14,6 +14,13 @@ _cache: dict[tuple, Any] = {}
 _overrides: dict[Callable, Callable] = {}
 
 
+def _normalize_value(value: Any) -> Any:
+    """Convert dicts to sorted tuples for proper caching."""
+    if isinstance(value, dict):
+        return tuple(sorted(value.items()))
+    return value
+
+
 @overload
 def dep(
     cached: bool = False,
@@ -42,11 +49,13 @@ def dep(cached: bool = False):
         def sync_wrapper(*args, **kwargs) -> Generator[T, None, None]:
             # - Resolve target function
 
-            target_func = _overrides.get(func, func)
+            target_func = _overrides.get(func, default=func)
 
             # - Build cache key
 
-            cache_key = (target_func, args, tuple(sorted(kwargs.items())))
+            normalized_args = tuple(_normalize_value(arg) for arg in args)
+            normalized_kwargs = tuple(sorted((k, _normalize_value(v)) for k, v in kwargs.items()))
+            cache_key = (target_func, normalized_args, normalized_kwargs)
 
             # - Check cache if enabled
 
@@ -92,7 +101,9 @@ def dep(cached: bool = False):
 
             # - Build cache key
 
-            cache_key = (target_func, args, tuple(sorted(kwargs.items())))
+            normalized_args = tuple(_normalize_value(arg) for arg in args)
+            normalized_kwargs = tuple(sorted((k, _normalize_value(v)) for k, v in kwargs.items()))
+            cache_key = (target_func, normalized_args, normalized_kwargs)
 
             # - Check cache if enabled
 
