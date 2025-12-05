@@ -22,7 +22,7 @@ from dep import dep, override
 # - Example
 
 @dep(cached=True)
-async def get_db(): # works in both sync and async
+async def get_db():
     db = Database()
     yield db
     db.close()
@@ -66,6 +66,6 @@ with get_session_db(scope={'env': 'test'}) as db:
 ```
 
 ## Notes
-
+- Works with both sync and async functions
 - Top-level dict arguments are converted to sorted tuples when computing cache keys
 
