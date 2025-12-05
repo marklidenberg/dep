@@ -47,13 +47,13 @@ def get_user(user_id: int):
         cache.set(user_id, user)
         return user
 
-# - Override for testing
+# - Override
 
 @dep()
 def get_mock_db():
     yield MockDatabase()
 
-override(get_db=get_mock_db)
+override({get_db: get_mock_db})
 ```
 
 ## Notes
