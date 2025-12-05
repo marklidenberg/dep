@@ -21,24 +21,6 @@ from dep import dep, override
 
 # - Example
 
-@dep()
-def foo():
-    yield "bar"
-
-with foo() as value:
-    assert value == "bar"
-
-# - Async support
-
-@dep()
-async def foo():
-    yield "async_bar"
-
-async with foo() as value:
-    assert value == "async_bar"
-
-# - Real-world example (with caching for expensive resources)
-
 @dep(cached=True)
 def get_db():
     db = Database()
