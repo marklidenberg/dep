@@ -6,7 +6,7 @@ Lightweight dependency injection for Python.
 
 ```python
 def dep(cached: bool = False):
-    """Decorator for dependency injection with optional caching."""
+    """Decorator for defining dependencies."""
     ...
 
 def override(mapping: dict[Callable, Callable]):
@@ -66,6 +66,7 @@ with get_session_db(scope={'env': 'test'}) as db:
 ```
 
 ## Notes
+
 - Works with both sync and async functions
 - Top-level dict arguments are converted to sorted tuples when computing cache keys
 

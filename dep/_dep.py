@@ -26,7 +26,7 @@ def dep(cached: bool = False) -> Callable[
     Union[Callable[..., contextmanager[T]], Callable[..., asynccontextmanager[T]]]
 ]:
     """
-    Decorator for dependency injection with optional caching.
+    Decorator for defining dependencies.
 
     Args:
         cached: If True, the result will be cached and reused for the duration of the context
