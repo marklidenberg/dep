@@ -62,7 +62,7 @@ override(get_db=get_mock_db)
 
 ## Recipe: Scopes
 
-Use the argument like `scope` to manage different scopes (session, thread, environment, etc.) for cached dependencies. 
+Pass scope information as function arguments to create separate cache instances for different contexts (session, thread, environment, etc.). 
 
 ```python
 from dep import dep
