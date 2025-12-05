@@ -56,37 +56,21 @@ def get_mock_db():
 override(get_db=get_mock_db)
 ```
 
+## Notes
+
+- Top-level dict args are converted to sorted tuples under the hood for caching
+
 ## Recipe: Scopes
 
-Use the `scope` parameter to manage different scopes (session, thread, environment, etc.) for cached dependencies. The `scope` is a function parameter (not a `@dep` parameter) that defaults to an empty tuple. Dict values are automatically converted to sorted tuples for proper caching.
+Use the argument like `scope` to manage different scopes (session, thread, environment, etc.) for cached dependencies. 
 
 ```python
 from dep import dep
 
-# Session-scoped dependency
 @dep(cached=True)
-def get_session_db(scope=("session",)):
-    db = Database(session_id=get_current_session())
-    yield db
-    db.close()
+def get_session_db(scope: dict):
+    ...
 
-# Thread-scoped dependency
-@dep(cached=True)
-def get_thread_cache(scope=("thread",)):
-    cache = ThreadLocalCache()
-    yield cache
-    cache.clear()
-
-# Environment-scoped dependency
-@dep(cached=True)
-def get_prod_config(scope={"env": "production"}):
-    config = Config(env="production")
-    yield config
-
-# Different scopes maintain separate cached instances
-def process_request():
-    with get_session_db() as db:  # Cached per session
-        with get_thread_cache() as cache:  # Cached per thread
-            # Process using scoped resources
-            pass
+with get_session_db(scope={'env': 'test'}) as db:
+    ...
 ```
