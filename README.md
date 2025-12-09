@@ -60,4 +60,3 @@ class context:
 
 - Works with both sync and async functions
 - Context is managed with `contextvars` - safe for async/await
-- Cache keys are JSON-serialized inputs with sorted keys. You can override this with a custom key function if needed
