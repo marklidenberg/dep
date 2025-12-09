@@ -1,4 +1,3 @@
-from ._dep import dep
-from .override import override
+from ._dep import dep, context
 
-__all__ = ['dep', 'override']
+__all__ = ['dep', 'context']

@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import wraps
 from typing import Any, Callable, TypeVar, Generator, AsyncGenerator, Union
 from contextlib import contextmanager, asynccontextmanager
+from contextvars import ContextVar
 import asyncio
 import inspect
 import json
@@ -12,7 +13,40 @@ T = TypeVar("T")
 # - Module-level state
 
 _cache: dict[str, Any] = {}
-_overrides: dict[Callable, Callable] = {}
+_context_stack: ContextVar[list[dict[Callable, Callable]]] = ContextVar('_context_stack', default=[])
+
+
+def _resolve_function(func: Callable) -> Callable:
+    """Walk context stack from top to bottom, return first override found."""
+    stack = _context_stack.get()
+    for overrides in reversed(stack):
+        if func in overrides:
+            return overrides[func]
+    return func
+
+
+class context:
+    def __init__(self, overrides: dict[Callable, Callable]):
+        self.overrides = overrides
+        self.token = None
+
+    def __enter__(self):
+        stack = _context_stack.get().copy()
+        stack.append(self.overrides)
+        self.token = _context_stack.set(stack)
+        return self
+
+    def __exit__(self, *args):
+        _context_stack.reset(self.token)
+
+    async def __aenter__(self):
+        stack = _context_stack.get().copy()
+        stack.append(self.overrides)
+        self.token = _context_stack.set(stack)
+        return self
+
+    async def __aexit__(self, *args):
+        _context_stack.reset(self.token)
 
 
 def dep(
@@ -40,7 +74,7 @@ def dep(
         def sync_wrapper(*args, **kwargs) -> Generator[T, None, None]:
             # - Resolve target function
 
-            target_func = _overrides.get(func, func)
+            target_func = _resolve_function(func)
 
             # - Build cache key
 
@@ -88,7 +122,7 @@ def dep(
         async def async_wrapper(*args, **kwargs) -> AsyncGenerator[T, None]:
             # - Resolve target function
 
-            target_func = _overrides.get(func, func)
+            target_func = _resolve_function(func)
 
             # - Build cache key
 
@@ -173,6 +207,25 @@ def test():
     import asyncio
 
     asyncio.run(test_async())
+
+    # - Test context override
+
+    async def test_async_context():
+        @dep()
+        async def get_bar():
+            yield "original"
+
+        async def new_get_bar():
+            yield "overridden"
+
+        async with context({get_bar: new_get_bar}):
+            async with get_bar() as value:
+                assert value == "overridden"
+
+        async with get_bar() as value:
+            assert value == "original"
+
+    asyncio.run(test_async_context())
 
 
 if __name__ == "__main__":

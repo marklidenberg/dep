@@ -2,38 +2,12 @@
 
 Lightweight dependency injection for Python.
 
-## API Reference
-
-```python
-def dep(
-    cached: bool = False,
-    cache_key_func = lambda *args, **kwargs: json.dumps(
-        {"args": args, "kwargs": kwargs}, 
-        sort_keys=True, 
-        default=str
-    ),
-):
-    """
-    Decorator for defining dependencies.
-
-    Args:
-        cached: If True, the result will be cached and reused for the duration of the context
-        cache_key_func: Function to generate cache keys from arguments.
-                        Defaults to JSON serialization with sorted keys (sort_keys=True, default=str)
-    """
-    ...
-
-def override(mapping: dict[Callable, Callable]):
-    """Override dependency functions with new implementations."""
-    ...
-```
-
 ## Usage
 
 ```python
-from dep import dep, override
+from dep import dep, context
 
-# - Example
+# - Define dependencies
 
 @dep(cached=True)
 async def get_db():
@@ -49,16 +23,18 @@ async def get_user(user_id: int):
         cache.set(user_id, user)
         return user
 
-# - Override
+# - Override with context
 
 @dep()
 def get_mock_db():
     yield MockDatabase()
 
-override({get_db: get_mock_db})
+async with context({get_db: get_mock_db}):
+    async with get_db() as db:
+        ...
 ```
 
-## Recipe: scopes
+## Recipe: Scopes
 
 Pass scope information as function arguments to create separate cache instances for different contexts (session, thread, environment, etc.).
 
@@ -72,9 +48,36 @@ def get_session_db(scope: dict):
 with get_session_db(scope={'env': 'test'}) as db:
     ...
 ```
+ 
+## API Reference
+
+```python
+def dep(
+    cached: bool = False,
+    cache_key_func = lambda *args, **kwargs: json.dumps(
+        {"args": args, "kwargs": kwargs},
+        sort_keys=True,
+        default=str
+    ),
+):
+    """
+    Decorator for defining dependencies.
+
+    Args:
+        cached: If True, the result will be cached and reused for the duration of the context
+        cache_key_func: Function to generate cache keys from arguments.
+                        Defaults to JSON serialization with sorted keys (sort_keys=True, default=str)
+    """
+    ...
+
+class context:
+    """Context manager to scope dependencies"""
+    def __init__(self, overrides: dict[Callable, Callable]): ...
+```
 
 
 ## Notes
 
 - Works with both sync and async functions
-- Cache keys are JSON-serialized inputs with sorted keys. You can override this with a custom key function if needed.
+- Context is managed with `contextvars` - safe for async/await
+- Cache keys are JSON-serialized inputs with sorted keys. You can override this with a custom key function if needed
