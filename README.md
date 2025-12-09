@@ -32,8 +32,6 @@ async with context({get_db: get_mock_db}):
 
 ## Recipe: argument-scoped caching
 
-If you need separate cache instances, pass the scope info in as function arguments.
-
 ```python
 from dep import dep
 
@@ -47,24 +45,20 @@ with get_session_db(env='test') as db:
 
 ## Cache Lifetime
 
-When `cached=True`, the dependency is cached and reused across multiple context manager calls. The cache entry is removed after the first context call exits and cleanup runs:
+When `cached=True`, the dependency is reused within nested calls and cleaned up once:
 
 ```python
 @dep(cached=True)
 def get_db():
     db = Database()
     yield db
-    db.close()  # Cleanup runs after context exits
+    db.close()
 
-# First call: creates and caches
 with get_db() as db:
-    with get_db() as db2:
-        ... # uses the cached value
-
-# Cache is cleared after context exits and cleanup runs
+    with get_db() as db2:  # Reuses the same instance
+        assert db is db2
+# Cleanup runs once when the outermost context exits
 ```
-
-Cached dependencies are stored per-container and keyed by function + arguments.
 
 ## API Reference
 
