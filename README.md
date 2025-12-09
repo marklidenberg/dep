@@ -75,7 +75,7 @@ def dep(
     Decorator for defining dependencies.
 
     Args:
-        cached: If True, the result will be cached and reused for the duration of the context
+        cached: If True, the dependency is reused within nested calls
         cache_key_func: Function to generate cache keys from arguments.
                         Defaults to JSON serialization with sorted keys (sort_keys=True, default=str)
     """
