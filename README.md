@@ -89,7 +89,8 @@ class Container:
     """
     Dependency injection container.
 
-    By default, `dep` and `context` use a shared global container. Create separate containers for isolation (e.g., testing, multi-tenancy)
+    By default, `dep` and `context` use a shared global container. 
+    Create separate containers for isolation (e.g., testing, multi-tenancy)
     """
     def dep(self, cached: bool = False, cache_key_func = ...): ...
     def context(self, overrides: dict[Callable, Callable]): ...
