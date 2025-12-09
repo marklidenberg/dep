@@ -45,6 +45,27 @@ with get_session_db(env='test') as db:
     ...
 ```
 
+## Cache Lifetime
+
+When `cached=True`, the dependency is cached and reused across multiple context manager calls. The cache entry is removed after the first context call exits and cleanup runs:
+
+```python
+@dep(cached=True)
+def get_db():
+    db = Database()
+    yield db
+    db.close()  # Cleanup runs after context exits
+
+# First call: creates and caches
+with get_db() as db:
+    with get_db() as db2:
+        ... # uses the cached value
+
+# Cache is cleared after context exits and cleanup runs
+```
+
+Cached dependencies are stored per-container and keyed by function + arguments.
+
 ## API Reference
 
 ```python
