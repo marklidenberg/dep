@@ -2,6 +2,12 @@
 
 Python dependency injection using context managers.
 
+## Installation
+
+```bash
+pip install "git+https://github.com/marklidenberg/dep.git"
+```
+
 ## Usage
 
 ```python
@@ -102,4 +108,10 @@ class Container:
     def context(self, overrides: dict[Callable, Callable]): ...
 ```
 
+## License
 
+MIT License
+
+## Author
+
+Mark Lidenberg [marklidenberg@gmail.com](mailto:marklidenberg@gmail.com)
