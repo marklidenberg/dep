@@ -5,8 +5,22 @@ Lightweight dependency injection for Python.
 ## API Reference
 
 ```python
-def dep(cached: bool = False):
-    """Decorator for defining dependencies."""
+def dep(
+    cached: bool = False,
+    cache_key_func = lambda *args, **kwargs: json.dumps(
+        {"args": args, "kwargs": kwargs}, 
+        sort_keys=True, 
+        default=str
+    ),
+):
+    """
+    Decorator for defining dependencies.
+
+    Args:
+        cached: If True, the result will be cached and reused for the duration of the context
+        cache_key_func: Function to generate cache keys from arguments.
+                        Defaults to JSON serialization with sorted keys (sort_keys=True, default=str)
+    """
     ...
 
 def override(mapping: dict[Callable, Callable]):
@@ -46,7 +60,7 @@ override({get_db: get_mock_db})
 
 ## Recipe: scopes
 
-Pass scope information as function arguments to create separate cache instances for different contexts (session, thread, environment, etc.). 
+Pass scope information as function arguments to create separate cache instances for different contexts (session, thread, environment, etc.).
 
 ```python
 from dep import dep
@@ -59,8 +73,8 @@ with get_session_db(scope={'env': 'test'}) as db:
     ...
 ```
 
+
 ## Notes
 
 - Works with both sync and async functions
-- Top-level dict arguments are converted to sorted tuples when computing cache keys
-
+- Cache keys are JSON-serialized inputs with sorted keys. You can override this with a custom key function if needed.

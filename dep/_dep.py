@@ -5,31 +5,33 @@ from typing import Any, Callable, TypeVar, Generator, AsyncGenerator, Union
 from contextlib import contextmanager, asynccontextmanager
 import asyncio
 import inspect
+import json
 
 T = TypeVar("T")
 
 # - Module-level state
 
-_cache: dict[tuple, Any] = {}
+_cache: dict[str, Any] = {}
 _overrides: dict[Callable, Callable] = {}
 
 
-def _normalize_value(value: Any) -> Any:
-    """Convert dicts to sorted tuples for proper caching."""
-    if isinstance(value, dict):
-        return tuple(sorted(value.items()))
-    return value
-
-
-def dep(cached: bool = False) -> Callable[
+def dep(
+    cached: bool = False,
+    cache_key_func: Callable[..., str] = lambda *args, **kwargs: json.dumps(
+        {"args": args, "kwargs": kwargs},
+        sort_keys=True,
+        default=str,
+    ),
+) -> Callable[
     [Union[Callable[..., Generator[T, None, None]], Callable[..., AsyncGenerator[T, None]]]],
-    Union[Callable[..., contextmanager[T]], Callable[..., asynccontextmanager[T]]]
+    Union[Callable[..., contextmanager[T]], Callable[..., asynccontextmanager[T]]],
 ]:
     """
     Decorator for defining dependencies.
 
     Args:
         cached: If True, the result will be cached and reused for the duration of the context
+        cache_key_func: Function to generate cache keys from arguments. Defaults to JSON serialization with sorted keys.
     """
 
     def decorator(func: Callable[..., Generator[T, None, None]]) -> Callable[..., contextmanager[T]]:
@@ -42,9 +44,7 @@ def dep(cached: bool = False) -> Callable[
 
             # - Build cache key
 
-            normalized_args = tuple(_normalize_value(arg) for arg in args)
-            normalized_kwargs = tuple(sorted((k, _normalize_value(v)) for k, v in kwargs.items()))
-            cache_key = (target_func, normalized_args, normalized_kwargs)
+            cache_key = f"{id(target_func)}:{cache_key_func(*args, **kwargs)}"
 
             # - Check cache if enabled
 
@@ -92,9 +92,7 @@ def dep(cached: bool = False) -> Callable[
 
             # - Build cache key
 
-            normalized_args = tuple(_normalize_value(arg) for arg in args)
-            normalized_kwargs = tuple(sorted((k, _normalize_value(v)) for k, v in kwargs.items()))
-            cache_key = (target_func, normalized_args, normalized_kwargs)
+            cache_key = f"{id(target_func)}:{cache_key_func(*args, **kwargs)}"
 
             # - Check cache if enabled
 
