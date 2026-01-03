@@ -1,6 +1,6 @@
 # context-dep
 
-Python dependency injection with minimal API using context managers. 
+Python dependency injection using context managers. 
 
 Use it in any codebase (including FastAPI) to provide configs, clients, DB sessions, loggers, etc. 
 
