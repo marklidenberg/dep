@@ -1,8 +1,10 @@
 # context-dep
 
-Python dependency injection with minimal API using context managers. Works as DI for any Python code, including frameworks like FastAPI. Use it for configs, clients, db sessions, contexts, loggers, etc.
+Python dependency injection with minimal API using context managers. 
 
-Instead of passing the same stuff (database, config, API clients, current user) into every function, your code can grab it when needed — it’s reused for the duration of the work, cleaned up afterward, and easy to replace with fakes in tests from one place.
+Use it in any codebase (including FastAPI) to provide configs, clients, DB sessions, loggers, etc. 
+
+Instead of passing the same arguments through every function, your code can grab it when needed — it’s reused for the duration of the work, cleaned up afterward, and easy to replace with fakes in tests from one place.
 
 ```bash
 pip install context-dep
